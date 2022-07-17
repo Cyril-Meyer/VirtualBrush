@@ -25,7 +25,8 @@ class Bristle:
         p2_vector = p2 - self.p2
         self.p1 = 0.5 * self.p2 + 0.5 * self.p0
         self.p2 = normalize(self.p2 + p2_vector * rigidity) * self.length
-
+        # symmetry
+        # self.p1 = self.p1 + (0.5 * self.p2 + 0.5 * self.p0) - self.p1 + (0.5 * self.p2 + 0.5 * self.p0) - self.p1
 
     def draw(self):
         # return skimage.draw.line(0, 0, round(self.p2[0]), round(self.p2[1]))
