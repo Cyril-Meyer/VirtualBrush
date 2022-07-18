@@ -20,7 +20,7 @@ However, the project is already functional.
 
 | original | paint |
 |---|---|
-| ![inferno](image/inferno.png) | ![inferno](result/inferno.png) |
+| ![inferno](image/INFERNO.png) | ![inferno](result/INFERNO.png) |
 
 ## The Journey
 
