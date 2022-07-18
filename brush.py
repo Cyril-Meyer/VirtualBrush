@@ -9,22 +9,24 @@ def normalize(v):
 
 
 class Bristle:
-    def __init__(self, length=100, initial_direction=[1, 0]):
+    def __init__(self, length=100, rigidity=0.15, initial_direction=[1, 0]):
         assert length > 0
+        assert 0 < rigidity <= 1
         assert len(initial_direction) == 2
         assert np.sum(initial_direction) != 0
         initial_direction = np.array(initial_direction)
         self.length = length
+        self.rigidity = rigidity
         self.p0 = np.array([0, 0], dtype=np.uint8)
         self.p2 = normalize(initial_direction) * self.length
         self.p1 = 0.5 * self.p2 + 0.5 * self.p0
 
-    def next(self, direction, w=0.25, rigidity=0.5):
+    def next(self, direction, w=0.15):
         direction = np.array(direction)
         p2 = normalize(w * normalize(self.p2) + (1 - w) * direction) * self.length
         p2_vector = p2 - self.p2
         self.p1 = 0.5 * self.p2 + 0.5 * self.p0
-        self.p2 = normalize(self.p2 + p2_vector * rigidity) * self.length
+        self.p2 = normalize(self.p2 + p2_vector * self.rigidity) * self.length
         # symmetry
         self.p1 = self.p1 + (0.5 * self.p2 + 0.5 * self.p0) - self.p1 + (0.5 * self.p2 + 0.5 * self.p0) - self.p1
 
