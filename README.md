@@ -15,7 +15,6 @@ There are many bugs to fix, important improvements to bring to the painter
 However, the project is already functional.
 
 *Debug*
-* Error when the bristle / paintbrush get out of bound causing artifacts
 * Error with the initial direction of the paintbrush, need to clarify
 
 *Improvements*
