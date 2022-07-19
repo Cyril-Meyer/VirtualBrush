@@ -60,3 +60,13 @@ Each **Bristle** is represented using Bézier curve.
 ### Painting
 
 :construction: TODO / WIP :construction:
+
+### Benchmark
+**compute 1 000 000 bezier curve**
+
+| method | time (s) |
+| ------ | -------- |
+| bezier.bezier_fast | 13.91 |
+| bezier.bezier | 30.34 |
+| skimage.draw.bezier_curve | 93.22 |
+
