@@ -15,17 +15,39 @@ def normalize(v):
 
 
 @njit
-def bristle_next(direction, w, r, l, sp0, sp1, sp2):
-    p2 = normalize(w * normalize(sp2) + (1 - w) * direction) * l
+def bristle_next(direction, w, rigidity, length, sp0, sp1, sp2):
+    p2 = normalize(w * normalize(sp2) + (1 - w) * direction) * length
     p2_vector = p2 - sp2
     old_p1 = sp1
     sp1 = 0.5 * sp2 + 0.5 * sp0
     p1_noise = random.uniform(0.0, 0.25)
     sp1 = (1 - p1_noise) * sp1 + p1_noise * old_p1
-    sp2 = normalize(sp2 + p2_vector * r) * l
+    sp2 = normalize(sp2 + p2_vector * rigidity) * length
     # symmetry
     sp1 = sp1 + (0.5 * sp2 + 0.5 * sp0) - sp1 + (0.5 * sp2 + 0.5 * sp0) - sp1
     return sp0, sp1, sp2
+
+
+def bristle_next_struct(bristle, direction, w=0.05):
+    sp0, sp1, sp2 = bristle_next(direction, w,
+                                 bristle.rigidity, bristle.length,
+                                 bristle.p0, bristle.p1, bristle.p2)
+    bristle.p0 = sp0
+    bristle.p1 = sp1
+    bristle.p2 = sp2
+
+    return bristle
+
+
+@njit
+def bristle_draw(origin, p1, p2):
+    return bezier.bezier_fast(origin[0], origin[1],
+                              origin[0] + p1[0], origin[1] + p1[1],
+                              origin[0] + p2[0], origin[1] + p2[1])
+
+
+def bristle_draw_struct(bristle, origin):
+    return bristle_draw(origin, bristle.p1, bristle.p2)
 
 
 class Bristle:
@@ -33,45 +55,18 @@ class Bristle:
         assert length > 0
         assert 0 < rigidity <= 1
         assert len(initial_direction) == 2
-        assert np.sum(initial_direction) != 0
-        initial_direction = np.array(initial_direction)
+        # assert np.sum(initial_direction) != 0
         self.length = length
         self.rigidity = rigidity
         self.p0 = np.array([0, 0], dtype=np.uint8)
-        self.p2 = normalize(initial_direction) * self.length
+        self.p2 = normalize(np.array(initial_direction)) * self.length
         self.p1 = 0.5 * self.p2 + 0.5 * self.p0
 
     def next(self, direction, w=0.05):
         self.p0, self.p1, self.p2 = bristle_next(np.array(direction), w, self.rigidity, self.length, self.p0, self.p1, self.p2)
 
     def draw(self, origin):
-        # return skimage.draw.line(0, 0, round(self.p2[0]), round(self.p2[1]))
-        """
-        # simpler but slower
-        return skimage.draw.bezier_curve(round(origin[0]),
-                                         round(origin[1]),
-                                         round(origin[0] + self.p1[0]),
-                                         round(origin[1] + self.p1[1]),
-                                         round(origin[0] + self.p2[0]),
-                                         round(origin[1] + self.p2[1]),
-                                         1)
-        """
-        """
-        args = np.rint([origin[0], origin[1],
-                        origin[0] + self.p1[0], origin[1] + self.p1[1],
-                        origin[0] + self.p2[0], origin[1] + self.p2[1]],
-                       ).astype(np.int64)
-        return skimage.draw.bezier_curve(args[0],
-                                         args[1],
-                                         args[2],
-                                         args[3],
-                                         args[4],
-                                         args[5],
-                                         1)
-        """
-        return bezier.bezier_fast(origin[0], origin[1],
-                             origin[0] + self.p1[0], origin[1] + self.p1[1],
-                             origin[0] + self.p2[0], origin[1] + self.p2[1])
+        return bristle_draw(origin, self.p1, self.p2)
 
 
 def random_bristle(length_min=25, length_max=50,
@@ -91,29 +86,58 @@ def random_bristle(length_min=25, length_max=50,
     return bristle
 
 
+@njit
+def paintbrush_draw(position, list_pos, list_p1, list_p2):
+    rr, cc = [np.int64(x) for x in range(0)], [np.int64(x) for x in range(0)]
+    for i in range(len(list_pos)):
+        rr_, cc_ = bristle_draw(position + list_pos[i], list_p1[i], list_p2[i])
+        rr += rr_
+        cc += cc_
+
+    return rr, cc
+
+
 class Paintbrush:
     def __init__(self, position=[0, 0], bristles=1, shape=skimage.morphology.disk(10)):
         position = np.array(position)
         self.position = position
         self.bristles = []
 
-        for _ in range(bristles):
-            # self.bristles.append((Bristle(), random.choice(np.argwhere(np.array(shape)))))
-            self.bristles.append((random_bristle(), random.choice(np.argwhere(np.array(shape)))))
+        if isinstance(bristles, int):
+            for _ in range(bristles):
+                # self.bristles.append((Bristle(), random.choice(np.argwhere(np.array(shape)))))
+                self.bristles.append((random_bristle(), random.choice(np.argwhere(np.array(shape)))))
+        else: # suppose that bristles is a list of Bristle
+            for bristle in bristles:
+                self.bristles.append(bristle)
 
-    def move(self, direction):
+    def move(self, direction, w=0.05):
         direction = np.array(direction)
         self.position = self.position + direction
         for bristle, bristle_pos in self.bristles:
-            bristle.next(-direction)
+            # bristle.next(-direction) # slower
+            # bristle = bristle_next_struct(bristle, -direction)
+            p0, p1, p2 = bristle_next(-direction, w, bristle.rigidity, bristle.length, bristle.p0, bristle.p1, bristle.p2)
+            bristle.p0, bristle.p1, bristle.p2 = p0, p1, p2
 
     def draw(self):
-        rr, cc = np.array([], dtype=np.int64), np.array([], dtype=np.int64)
+        rr, cc = [], []
         for bristle, bristle_pos in self.bristles:
             rr_, cc_ = bristle.draw(self.position + bristle_pos)
-            rr = np.concatenate([rr, rr_])
-            cc = np.concatenate([cc, cc_])
+            # rr_, cc_ = bristle_draw(self.position + bristle_pos, bristle.p1, bristle.p2)
+            rr += rr_
+            cc += cc_
         return rr, cc
+        """
+        list_pos = []
+        list_p1 = []
+        list_p2 = []
+        for bristle, bristle_pos in self.bristles:
+            list_pos.append(bristle_pos)
+            list_p1.append(bristle.p1)
+            list_p2.append(bristle.p2)
+        return paintbrush_draw(self.position, np.array(list_pos), np.array(list_p1), np.array(list_p2))
+        """
 
 
 def random_paintbrush(position=[0, 0],
@@ -182,7 +206,7 @@ if __name__ == '__main__':
         X = random_brushstroke(512, 512)
 
     t1 = time.time()
-    print(t1 - t0, 's')
+    print(round(t1 - t0, 2), 's')
 
     '''
     plt.imshow(X, cmap='gray', interpolation='nearest')
