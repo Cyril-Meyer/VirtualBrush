@@ -16,6 +16,8 @@ def mouse_event(event, x, y, flags, param):
         DATA.fill(0)
         mouse_event.paintbrush.move([y - mouse_event.old_y, x - mouse_event.old_x])
         rr, cc = mouse_event.paintbrush.draw()
+        rr = np.clip(rr, 0, DATA.shape[0]-1)
+        cc = np.clip(cc, 0, DATA.shape[1]-1)
         DATA[rr, cc, 0] = 255
 
     mouse_event.old_x = x
