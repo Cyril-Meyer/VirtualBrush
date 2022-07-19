@@ -3,8 +3,10 @@ import time
 import numpy as np
 import skimage.draw
 import skimage.morphology
+import cv2
 import matplotlib.pyplot as plt
 from numba import jit, njit
+import bezier
 
 
 @njit
@@ -54,6 +56,7 @@ class Bristle:
                                          round(origin[1] + self.p2[1]),
                                          1)
         """
+        """
         args = np.rint([origin[0], origin[1],
                         origin[0] + self.p1[0], origin[1] + self.p1[1],
                         origin[0] + self.p2[0], origin[1] + self.p2[1]],
@@ -65,6 +68,11 @@ class Bristle:
                                          args[4],
                                          args[5],
                                          1)
+        """
+        return bezier.bezier_fast(origin[0], origin[1],
+                             origin[0] + self.p1[0], origin[1] + self.p1[1],
+                             origin[0] + self.p2[0], origin[1] + self.p2[1])
+
 
 def random_bristle(length_min=25, length_max=50,
                    rigidity_min=0.1, rigidity_max=0.2,
@@ -147,15 +155,17 @@ def random_brushstroke(size_x, size_y):
     assert len(rr) == len(cc)
     for i in range(1, len(rr)-len(rr)//100):
         paintbrush.move([rr[i] - rr[i-1], cc[i] - cc[i-1]])
-        Y = np.zeros((size_x, size_y), dtype=np.uint64)
+        Y = np.zeros((size_x, size_y), dtype=np.uint8)
 
         rr, cc = paintbrush.draw()
         rr = np.clip(rr, 0, size_x-1)
         cc = np.clip(cc, 0, size_y-1)
         Y[rr, cc] = 1
 
-        Y = skimage.morphology.binary_dilation(Y, skimage.morphology.disk(2))
-        X = X + Y
+        # Y = skimage.morphology.binary_dilation(Y, skimage.morphology.disk(2))
+        Y = cv2.dilate(Y, skimage.morphology.disk(2), iterations=1)
+
+        X = X + Y.astype(np.uint64)
 
     X = np.clip(X, 0, 255).astype(np.uint8)
     X = skimage.morphology.closing(X, skimage.morphology.disk(2))
