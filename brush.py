@@ -152,6 +152,16 @@ def random_paintbrush(position=[0, 0],
     return paintbrush
 
 
+def random_paintbrush_flat(position=[0, 0],
+                      bristles_min=1, bristles_max=100,
+                      shape=np.ones([50, 4])):
+    bristles = random.randint(bristles_min, bristles_max)
+    paintbrush = Paintbrush(position=position,
+                            bristles=bristles,
+                            shape=shape)
+    return paintbrush
+
+
 def random_brushstroke(size_x, size_y):
     X = np.zeros((size_x, size_y), dtype=np.uint64)
     # I do not know which one is the good one
