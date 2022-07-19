@@ -1,12 +1,29 @@
 import random
+import time
 import numpy as np
 import skimage.draw
 import skimage.morphology
 import matplotlib.pyplot as plt
+from numba import jit, njit
 
 
+@njit
 def normalize(v):
     return v / np.sqrt(np.sum(v**2))
+
+
+@njit
+def bristle_next(direction, w, r, l, sp0, sp1, sp2):
+    p2 = normalize(w * normalize(sp2) + (1 - w) * direction) * l
+    p2_vector = p2 - sp2
+    old_p1 = sp1
+    sp1 = 0.5 * sp2 + 0.5 * sp0
+    p1_noise = random.uniform(0.0, 0.25)
+    sp1 = (1 - p1_noise) * sp1 + p1_noise * old_p1
+    sp2 = normalize(sp2 + p2_vector * r) * l
+    # symmetry
+    sp1 = sp1 + (0.5 * sp2 + 0.5 * sp0) - sp1 + (0.5 * sp2 + 0.5 * sp0) - sp1
+    return sp0, sp1, sp2
 
 
 class Bristle:
@@ -23,19 +40,12 @@ class Bristle:
         self.p1 = 0.5 * self.p2 + 0.5 * self.p0
 
     def next(self, direction, w=0.05):
-        direction = np.array(direction)
-        p2 = normalize(w * normalize(self.p2) + (1 - w) * direction) * self.length
-        p2_vector = p2 - self.p2
-        old_p1 = self.p1
-        self.p1 = 0.5 * self.p2 + 0.5 * self.p0
-        p1_noise = random.uniform(0.0, 0.25)
-        self.p1 = (1 - p1_noise) * self.p1 + p1_noise * old_p1
-        self.p2 = normalize(self.p2 + p2_vector * self.rigidity) * self.length
-        # symmetry
-        self.p1 = self.p1 + (0.5 * self.p2 + 0.5 * self.p0) - self.p1 + (0.5 * self.p2 + 0.5 * self.p0) - self.p1
+        self.p0, self.p1, self.p2 = bristle_next(np.array(direction), w, self.rigidity, self.length, self.p0, self.p1, self.p2)
 
     def draw(self, origin):
         # return skimage.draw.line(0, 0, round(self.p2[0]), round(self.p2[1]))
+        """
+        # simpler but slower
         return skimage.draw.bezier_curve(round(origin[0]),
                                          round(origin[1]),
                                          round(origin[0] + self.p1[0]),
@@ -43,7 +53,18 @@ class Bristle:
                                          round(origin[0] + self.p2[0]),
                                          round(origin[1] + self.p2[1]),
                                          1)
-
+        """
+        args = np.rint([origin[0], origin[1],
+                        origin[0] + self.p1[0], origin[1] + self.p1[1],
+                        origin[0] + self.p2[0], origin[1] + self.p2[1]],
+                       ).astype(np.int64)
+        return skimage.draw.bezier_curve(args[0],
+                                         args[1],
+                                         args[2],
+                                         args[3],
+                                         args[4],
+                                         args[5],
+                                         1)
 
 def random_bristle(length_min=25, length_max=50,
                    rigidity_min=0.1, rigidity_max=0.2,
@@ -127,10 +148,12 @@ def random_brushstroke(size_x, size_y):
     for i in range(1, len(rr)-len(rr)//100):
         paintbrush.move([rr[i] - rr[i-1], cc[i] - cc[i-1]])
         Y = np.zeros((size_x, size_y), dtype=np.uint64)
-        try:
-            Y[paintbrush.draw()] = 1
-        except Exception as e:
-            print(e)
+
+        rr, cc = paintbrush.draw()
+        rr = np.clip(rr, 0, size_x-1)
+        cc = np.clip(cc, 0, size_y-1)
+        Y[rr, cc] = 1
+
         Y = skimage.morphology.binary_dilation(Y, skimage.morphology.disk(2))
         X = X + Y
 
@@ -143,8 +166,16 @@ def random_brushstroke(size_x, size_y):
 
 
 if __name__ == '__main__':
-    X = random_brushstroke(512, 512)
+    t0 = time.time()
 
+    for x in range(10):
+        X = random_brushstroke(512, 512)
+
+    t1 = time.time()
+    print(t1 - t0, 's')
+
+    '''
     plt.imshow(X, cmap='gray', interpolation='nearest')
     plt.gca().invert_yaxis()
     plt.show()
+    '''
