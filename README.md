@@ -14,6 +14,16 @@ The project is currently a work in progress.
 There are many bugs to fix, important improvements to bring to the painter
 However, the project is already functional.
 
+*Debug*
+* Error when the bristle / paintbrush get out of bound causing artifacts
+* Error with the initial direction of the paintbrush, need to clarify
+
+*Improvements*
+* Rotation of the paintbrush (interesting for non disk shapes)
+* Add more random to the bristle paint
+* Make the painter more easy to use and interactive
+* Improve performance
+
 ## Results
 
 **inferno**
