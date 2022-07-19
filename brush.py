@@ -47,7 +47,7 @@ class Bristle:
 
 def random_bristle(length_min=25, length_max=50,
                    rigidity_min=0.1, rigidity_max=0.2,
-                   initial_direction=[1, 1], initial_direction_epsilon=0.1):
+                   initial_direction=[0, 0], initial_direction_epsilon=0.1):
 
     length = random.randint(length_min, length_max)
     rigidity = random.uniform(rigidity_min, rigidity_max)
