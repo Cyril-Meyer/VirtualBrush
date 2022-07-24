@@ -8,8 +8,10 @@ WNAME = 'VirtualBrush - brush gui'
 def mouse_event(event, x, y, flags, param):
     if event == cv2.EVENT_LBUTTONDBLCLK:
         # mouse_event.paintbrush = brush.Paintbrush(position=[y, x])
-        # mouse_event.paintbrush = brush.random_paintbrush(position=[y, x])
-        mouse_event.paintbrush = brush.random_paintbrush_flat(position=[y, x])
+        mouse_event.paintbrush = brush.random_paintbrush(position=[y, x],
+                                 bristles_min=50, bristles_max=150,
+                                 shape_disk_min_radius=10, shape_disk_max_radius=25)
+        # mouse_event.paintbrush = brush.random_paintbrush_flat(position=[y, x])
 
     if event == cv2.EVENT_MOUSEMOVE:
         if mouse_event.paintbrush is None:
