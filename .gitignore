@@ -137,3 +137,9 @@ result/0*
 
 # Debug
 debug
+
+# GLM library
+VirtualBrushPP/glm
+
+# QtCreator
+*.pro.user
