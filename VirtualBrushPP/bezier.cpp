@@ -2,6 +2,10 @@
 
 std::vector<std::pair<int, int>> bresenham(int x0, int y0, int x1, int y1)
 {
+    /*
+    This code is very inspired from this source :
+    https://github.com/encukou/bresenham
+    */
     std::vector<std::pair<int, int>> pixels;
     float dx = (float)x1 - (float)x0;
     float dy = (float)y1 - (float)y0;
