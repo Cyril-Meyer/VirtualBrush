@@ -1,6 +1,5 @@
 #include "bezier.h"
 
-// https://github.com/SagarGaniga/computer-graphics
 std::vector<std::pair<int, int>> bresenham(int x0, int y0, int x1, int y1)
 {
     std::vector<std::pair<int, int>> pixels;
