@@ -143,3 +143,6 @@ VirtualBrushPP/glm
 
 # QtCreator
 *.pro.user
+
+# Video
+*.mp4
