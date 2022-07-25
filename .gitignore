@@ -141,6 +141,9 @@ debug
 # GLM library
 VirtualBrushPP/glm
 
+# Catch2 library
+VirtualBrushPP/catch2
+
 # QtCreator
 *.pro.user
 
